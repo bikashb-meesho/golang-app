@@ -53,6 +53,15 @@ run_check "Go Format Check" '
 # 2. Go Vet (Static Analysis)
 run_check "Go Vet (Static Analysis)" "go vet ./..."
 
+# 2b. golangci-lint (if installed)
+if command -v golangci-lint &> /dev/null; then
+    run_check "golangci-lint" "golangci-lint run ./..."
+else
+    echo -e "${YELLOW}⚠️  golangci-lint not installed (skipping)${NC}"
+    echo "   Install: brew install golangci-lint"
+    echo ""
+fi
+
 # 3. Go Mod Verify
 run_check "Go Mod Verify" "go mod verify"
 

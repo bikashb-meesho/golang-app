@@ -1,0 +1,121 @@
+name: Validate Production Dependencies
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  validate-deps:
+    name: Validate Library Versions
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.23'
+      
+      - name: Validate golang-lib version
+        run: |
+          echo "================================================"
+          echo "🔍 Validating golang-lib dependency version"
+          echo "================================================"
+          echo ""
+          
+          # Extract golang-lib version from go.mod
+          LIB_VERSION=$(grep "github.com/bikashb-meesho/golang-lib" go.mod | grep -v "^[[:space:]]*//\|replace" | awk '{print $2}')
+          
+          if [ -z "$LIB_VERSION" ]; then
+            echo "❌ ERROR: golang-lib dependency not found in go.mod"
+            exit 1
+          fi
+          
+          echo "Found golang-lib version: $LIB_VERSION"
+          echo ""
+          
+          # Check for replace directive
+          if grep -qE "^[[:space:]]*replace.*golang-lib" go.mod; then
+            echo "❌ ERROR: Main branch cannot use 'replace' directive"
+            echo ""
+            echo "Found replace directive:"
+            grep "replace.*golang-lib" go.mod
+            echo ""
+            echo "Action required:"
+            echo "  1. Remove the replace directive"
+            echo "  2. Use a production tag: go get github.com/bikashb-meesho/golang-lib@v1.x.x"
+            exit 1
+          fi
+          
+          echo "✅ No replace directive found"
+          echo ""
+          
+          # Validate it's a production version (semantic version without pre-release)
+          if ! echo "$LIB_VERSION" | grep -qE "^v[0-9]+\.[0-9]+\.[0-9]+$"; then
+            echo "❌ ERROR: Must use a production semantic version (vX.Y.Z)"
+            echo ""
+            echo "Current version: $LIB_VERSION"
+            echo ""
+            if echo "$LIB_VERSION" | grep -qE "-(alpha|beta|rc|dev|pre)"; then
+              echo "⚠️  Pre-release version detected"
+              echo ""
+              echo "Pre-release versions allowed:"
+              echo "  - v1.2.3-alpha    (alpha release)"
+              echo "  - v1.2.3-beta.1   (beta release)"
+              echo "  - v1.2.3-rc.1     (release candidate)"
+              echo "  - v1.2.3-dev.123  (development)"
+              echo ""
+              echo "But main branch MUST use stable versions:"
+              echo "  - v1.2.3          (production ready)"
+              echo ""
+            elif echo "$LIB_VERSION" | grep -qE "(latest|master|main)"; then
+              echo "⚠️  Branch reference detected: $LIB_VERSION"
+              echo ""
+              echo "Main branch cannot use branch references."
+              echo "Use a tagged version instead."
+              echo ""
+            else
+              echo "Invalid version format: $LIB_VERSION"
+            fi
+            
+            echo "Action required:"
+            echo "  1. Find latest stable version:"
+            echo "     curl https://api.github.com/repos/bikashb-meesho/golang-lib/tags"
+            echo "  2. Update to stable version:"
+            echo "     go get github.com/bikashb-meesho/golang-lib@v1.2.3"
+            echo "  3. Run: go mod tidy"
+            exit 1
+          fi
+          
+          echo "✅ Using production version: $LIB_VERSION"
+          echo ""
+          
+          # Verify the version exists on GitHub
+          echo "Verifying version exists on GitHub..."
+          if ! git ls-remote --tags https://github.com/bikashb-meesho/golang-lib.git | grep -q "refs/tags/$LIB_VERSION$"; then
+            echo "❌ ERROR: Version $LIB_VERSION not found in golang-lib repository"
+            echo ""
+            echo "Available versions:"
+            git ls-remote --tags https://github.com/bikashb-meesho/golang-lib.git | grep -E "refs/tags/v[0-9]" | awk '{print $2}' | sed 's|refs/tags/||' | sort -V | tail -10
+            exit 1
+          fi
+          
+          echo "✅ Version exists on GitHub"
+          echo ""
+          
+          echo "================================================"
+          echo "✅ All dependency validations passed!"
+          echo "================================================"
+          echo ""
+          echo "Summary:"
+          echo "  Library: github.com/bikashb-meesho/golang-lib"
+          echo "  Version: $LIB_VERSION"
+          echo "  Status:  Production Ready ✅"
+          echo ""
+
