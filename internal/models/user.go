@@ -27,4 +27,3 @@ func ValidateCreateUserRequest(req CreateUserRequest) error {
 	// Validation will be done using the validator package in the handler
 	return nil
 }
-
