@@ -3,7 +3,7 @@ module github.com/bikashb-meesho/golang-app
 go 1.23
 
 require (
-	github.com/bikashb-meesho/golang-lib v1.4.0
+	github.com/bikashb-meesho/golang-lib v1.5.0-alpha.1
 	go.uber.org/zap v1.27.0
 )
 
