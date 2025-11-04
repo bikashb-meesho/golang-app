@@ -8,6 +8,3 @@ require (
 )
 
 require go.uber.org/multierr v1.11.0 // indirect
-
-// For local development with the library
-replace github.com/bikashb-meesho/golang-lib => ../golang-lib
