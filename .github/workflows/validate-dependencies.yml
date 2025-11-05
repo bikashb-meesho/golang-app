@@ -124,7 +124,7 @@ jobs:
               echo ""
               echo "This version might be manually released."
               echo "Official releases are created by github-actions[bot]"
-              # Don't fail yet, but warn
+              exit 1
             fi
           else
             echo "❌ ERROR: Version $LIB_VERSION has no GitHub Release"
