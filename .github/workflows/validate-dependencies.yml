@@ -148,7 +148,7 @@ jobs:
             exit 1
           fi
           echo ""
-          
+
           echo "================================================"
           echo "✅ All dependency validations passed!"
           echo "================================================"
